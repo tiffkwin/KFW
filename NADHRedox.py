@@ -21,6 +21,7 @@ substrates = []
 ID = ''
 s_num = [0,0,0,0,0,0,0,0,0]
 
+# Retrieves input from the user
 def get_input():
 	global ID
 	global substrates
@@ -175,6 +176,7 @@ def averages(fluor):
 
 	return avg_stdcurve
 
+# Produces a dataframe containing the metadata for the experiments
 def prod_metadata():
 	# Prints metadata to dataframe
 	metadata = pd.DataFrame(columns=['ID','Substrates','Date'])
@@ -186,6 +188,7 @@ def prod_metadata():
 
 	return metadata
 
+# Plots a dataframe with an X Y X Y X Y... structure of columns
 def plot1(df, plot_name, file_name):
 	x_col = df[0]
 	run = 1
@@ -200,6 +203,7 @@ def plot1(df, plot_name, file_name):
 	plt.savefig(file_name)
 	plt.clf()
 
+# Plots a dataframe with an S1 S2 S3... structure of columns
 def plot2(df, plot_name, file_name):
 	df.plot()
 	plt.title(plot_name)
