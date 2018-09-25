@@ -203,6 +203,7 @@ def corrected(avg_raw):
 
 	return avg_raw
 
+# Produces a dataframe containing the metadata for the experiments
 def prod_metadata():
 	metadata = pd.DataFrame(columns=['ID','Standard Curve','Slope','Y-Intercept','Substrates','Date'])
 	metadata.at[0, 'ID'] = ID
@@ -216,6 +217,7 @@ def prod_metadata():
 
 	return metadata
 
+# Plots a dataframe with an X Y X Y X Y... structure of columns
 def plot1(df, plot_name, file_name):
 	x_col = df[0]
 	run = 1
@@ -230,6 +232,7 @@ def plot1(df, plot_name, file_name):
 	plt.savefig(file_name)
 	plt.clf()
 
+# Plots a dataframe with an S1 S2 S3... structure of columns
 def plot2(df, plot_name, file_name):
 	df.plot()
 	plt.title(plot_name)
