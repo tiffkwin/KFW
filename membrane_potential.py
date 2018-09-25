@@ -21,7 +21,9 @@ NUM_PERIODS = 8
 sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/Pc','Pc/M','Ac/M','KIC/M']
 substrates = []
 ID = ''
+s_num = [0,0,0,0,0,0,0,0,0]
 
+# Retrieves input from the user
 def get_input():
 	global ID
 	global SLOPE
@@ -45,10 +47,15 @@ def get_input():
 	while True:
 		try:
 			for i in range(0,NUM_SUBSTRATES):
-				substrates.append(sub_list[int(input('Select substrate ' + str(i + 1) + ': ')) - 1])
+				sub_num = int(input('Select substrate ' + str(i + 1) + ': ')) - 1
+				if s_num[sub_num] > 0:
+					substrates.append(sub_list[sub_num] + '.' + str(s_num[sub_num]))
+				else:
+					substrates.append(sub_list[sub_num])
+				s_num[sub_num] += 1
+
 			break
 		except Exception:
-			print(substrates)
 			print('\n[Error]: Please start over and enter a valid number for each selection.\n')
 			substrates = []
 
@@ -65,7 +72,7 @@ def get_input():
 		
 	return stdcurve
 
-
+# Adjusts the y-values using the standard curve calculation
 def std_curve(fluor):
 
 	# Iterrates through every row in the dataframe
@@ -196,6 +203,38 @@ def corrected(avg_raw):
 
 	return avg_raw
 
+def prod_metadata():
+	metadata = pd.DataFrame(columns=['ID','Standard Curve','Slope','Y-Intercept','Substrates','Date'])
+	metadata.at[0, 'ID'] = ID
+	metadata.at[0, 'Standard Curve'] = bool_stdcurve
+	metadata.at[0, 'Slope'] = SLOPE
+	metadata.at[0, 'Y-Intercept'] = Y_INT
+	for i in range(0,len(substrates)):
+		metadata.at[i, 'Substrates'] = substrates[i]
+	now = datetime.datetime.now()
+	metadata.at[0,'Date'] = now.strftime("%Y-%m-%d")
+
+	return metadata
+
+def plot1(df, plot_name, file_name):
+	x_col = df[0]
+	run = 1
+	for i in range(0, len(df.columns)):
+		if i % 2 == 0:
+			x_col = df[i]
+		else:
+			plt.plot(x_col, df[i], label='Run ' + str(run))
+			run += 1
+	plt.legend(loc='best')
+	plt.title(plot_name)
+	plt.savefig(file_name)
+	plt.clf()
+
+def plot2(df, plot_name, file_name):
+	df.plot()
+	plt.title(plot_name)
+	plt.savefig(file_name)
+	plt.clf()
 
 # ----MAIN----
 
@@ -236,30 +275,11 @@ for name in files:
 
 	os.chdir(output_dir)
 
-	x_col = fluor_raw[0]
-	run = 1
-	for i in range(0, len(fluor_raw.columns)):
-		if i % 2 == 0:
-			x_col = fluor_raw[i]
-		else:
-			plt.plot(x_col, fluor_raw[i], label='Run ' + str(run))
-			run += 1
-	plt.legend(loc='best')
-	#plt.show()
-	plt.title('Raw Data')
-	plt.savefig('Raw.png')
-	plt.clf()
+	# Plot raw data
+	plot1(fluor_raw, 'Raw Data', 'Raw.png')
 
-	# Prints metadata to dataframe
-	metadata = pd.DataFrame(columns=['ID','Standard Curve','Slope','Y-Intercept','Substrates','Date'])
-	metadata.at[0, 'ID'] = ID
-	metadata.at[0, 'Standard Curve'] = bool_stdcurve
-	metadata.at[0, 'Slope'] = SLOPE
-	metadata.at[0, 'Y-Intercept'] = Y_INT
-	for i in range(0,len(substrates)):
-		metadata.at[i, 'Substrates'] = substrates[i]
-	now = datetime.datetime.now()
-	metadata.at[0,'Date'] = now.strftime("%Y-%m-%d")
+	# Produces metadata
+	metadata = prod_metadata()
 
 	# Exports metadata to .xlsx file
 	metadata.to_excel(writer, ('Metadata'))
@@ -282,48 +302,32 @@ for name in files:
 
 	avg_raw = averages(fluor)
 
-	avg_raw.plot()
-	plt.title('Averaged Raw Data')
-	plt.savefig('Avg_Raw.png')
-	plt.clf()
+	# Plots averaged raw data
+	plot2(avg_raw, 'Averaged Raw Data', 'Avg_Raw.png')
 
 	# ----EXPORT - AVG RAW DATA----
 
 	avg_raw.to_excel(writer, ('Averaged Raw Data'))
 
+	# Performs correction calculation
 	corrected_raw = corrected(avg_raw)
 
-	corrected_raw.plot()
-	plt.title('Corrected Data')
-	plt.savefig('Corrected.png')
-	plt.clf()
+	# Plots corrected data
+	plot2(corrected_raw, 'Corrected Data', 'Corrected.png')
 
 	# ----MEMBRANE POTENTIAL STANDARD CURVE----
 	if(bool_stdcurve):
 		fluor = std_curve(fluor)
 
-		x_col = fluor[0]
-		run = 1
-		for i in range(0, len(fluor.columns)):
-			if i % 2 == 0:
-				x_col = fluor[i]
-			else:
-				plt.plot(x_col, fluor[i], label='Run ' + str(run))
-				run += 1
-		plt.legend(loc='best')
-		#plt.show()
-		plt.title('Standard Curve Data')
-		plt.savefig('Standard_Curve.png')
-		plt.clf()
+		# Plots standard curve data
+		plot1(fluor, 'Standard Curve Data', 'Standard_Curve.png')
 
 	# ----AVERAGES - STANDARD CURVE----
 
 		avg_stdcurve = averages(fluor)
 
-		avg_stdcurve.plot()
-		plt.title('Averaged Standard Curve Data')
-		plt.savefig('Avg_Standard_Curve.png')
-		plt.clf()
+		# Plots averaged standard curve data
+		plot2(avg_stdcurve, 'Averaged Standard Curve Data', 'Avg_Standard_Curve.png')
 
 	# ----EXPORT---
 

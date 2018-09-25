@@ -175,6 +175,37 @@ def averages(fluor):
 
 	return avg_stdcurve
 
+def prod_metadata():
+	# Prints metadata to dataframe
+	metadata = pd.DataFrame(columns=['ID','Substrates','Date'])
+	metadata.at[0, 'ID'] = ID
+	for i in range(0,len(substrates)):
+		metadata.at[i, 'Substrates'] = substrates[i]
+	now = datetime.datetime.now()
+	metadata.at[0,'Date'] = now.strftime("%Y-%m-%d")
+
+	return metadata
+
+def plot1(df, plot_name, file_name):
+	x_col = df[0]
+	run = 1
+	for i in range(0, len(df.columns)):
+		if i % 2 == 0:
+			x_col = df[i]
+		else:
+			plt.plot(x_col, df[i], label='Run ' + str(run))
+			run += 1
+	plt.legend(loc='best')
+	plt.title(plot_name)
+	plt.savefig(file_name)
+	plt.clf()
+
+def plot2(df, plot_name, file_name):
+	df.plot()
+	plt.title(plot_name)
+	plt.savefig(file_name)
+	plt.clf()
+
 # ----MAIN----
 
 get_input()
@@ -214,27 +245,10 @@ for name in files:
 
 	os.chdir(output_dir)
 
-	x_col = fluor_raw[0]
-	run = 1
-	for i in range(0, len(fluor_raw.columns)):
-		if i % 2 == 0:
-			x_col = fluor_raw[i]
-		else:
-			plt.plot(x_col, fluor_raw[i], label='Run ' + str(run))
-			run += 1
-	plt.legend(loc='best')
-	#plt.show()
-	plt.title('Raw Data')
-	plt.savefig('Raw.png')
-	plt.clf()
+	# Plot raw data
+	plot1(fluor_raw, 'Raw Data', 'Raw.png')
 
-	# Prints metadata to dataframe
-	metadata = pd.DataFrame(columns=['ID','Substrates','Date'])
-	metadata.at[0, 'ID'] = ID
-	for i in range(0,len(substrates)):
-		metadata.at[i, 'Substrates'] = substrates[i]
-	now = datetime.datetime.now()
-	metadata.at[0,'Date'] = now.strftime("%Y-%m-%d")
+	metadata = prod_metadata()
 
 	# Exports metadata to .xlsx file
 	metadata.to_excel(writer, ('Metadata'))
@@ -262,20 +276,8 @@ for name in files:
 
 	fluor.to_excel(writer, ('Stripped Data'))
 
-	x_col = fluor[0]
-	run = 1
-	for i in range(0, len(fluor.columns)):
-		if i % 2 == 0:
-			x_col = fluor[i]
-		else:
-			plt.plot(x_col, fluor[i], label='Run ' + str(run))
-			run += 1
-	plt.legend(loc='best')
-	#plt.show()
-	plt.title('Stripped Data')
-	plt.savefig('Stripped.png')
-	plt.clf()
-
+	# Plot stripped data
+	plot1(fluor, 'Stripped Data', 'Stripped.png')
 
 	avg_stripped = fluor.copy()
 	avg_stripped = averages(avg_stripped)
@@ -288,28 +290,15 @@ for name in files:
 
 	fluor.to_excel(writer, ('Reduced Data'))
 
-	x_col = fluor[0]
-	run = 1
-	for i in range(0, len(fluor.columns)):
-		if i % 2 == 0:
-			x_col = fluor[i]
-		else:
-			plt.plot(x_col, fluor[i], label='Run ' + str(run))
-			run += 1
-	plt.legend(loc='best')
-	#plt.show()
-	plt.title('Reduced Data')
-	plt.savefig('Reduced.png')
-	plt.clf()
+	# Plot reduced data
+	plot1(fluor, 'Reduced Data', 'Reduced.png')
 
 	# ----AVERAGES - REDUCED DATA----
 
 	avg = averages(fluor)
 
-	avg.plot()
-	plt.title('Averaged Reduced Data')
-	plt.savefig('Avg_Reduced.png')
-	plt.clf()
+	# Plot averaged reduced data
+	plot2(avg, 'Averaged Reduced Data', 'Avg_Reduced.png')
 
 	# ----EXPORT - AVG REDUCED DATA----
 
