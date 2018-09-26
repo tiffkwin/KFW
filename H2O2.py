@@ -22,6 +22,7 @@ sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/Pc','Pc/M','Ac/M','KIC/M']
 substrates = []
 ID = ''
 s_num = [0,0,0,0,0,0,0,0,0]
+MITOCHONDRIA = 0.0
 
 # Retrieves input from the user
 def get_input():
@@ -29,6 +30,7 @@ def get_input():
 	global SLOPE
 	global Y_INT
 	global substrates
+	global MITOCHONDRIA
 	print('\nDATA ANALYSIS')
 	print('-----------------------------------------------')
 	ID = input('Enter the ID: ')
@@ -69,6 +71,13 @@ def get_input():
 			break
 		except ValueError:
 			print('\n[Error]: Please start over and enter a valid number for each value.\n')
+
+	while True:	
+		try:
+			MITOCHONDRIA = int(input('How many milligrams of mitochondria will you be using? '))
+			break
+		except ValueError:
+			print('\n[Error]: Please enter a valid number.\n')
 		
 	return stdcurve
 
@@ -106,10 +115,8 @@ def calc_slopes(fluor):
 	for column in fluor[fluor.columns[::2]]:
 
 		period = 0 # Counter that tracks the period
-		fluorsum = 0 # The running sum of fluorescence values to be averaged
-		x = []
-		y = []
-		#k = 0 # Number of data points being averaged
+		x = [] # Array containing x-values of data points to be used in slope calculation
+		y = [] # Array containing y-values of data points to be used in slope calculation
 
 		# Creates numpy array to store averages in
 		slopes = np.array([])
@@ -133,63 +140,40 @@ def calc_slopes(fluor):
 					x.append(fluor[column][rnum])
 					y.append(fluor[column+1][rnum])
 
-					# Increment the amount of data points being averaged
-					#k += 1
-
 				# If the time given by the x-value surpasses the ending cutoff time for substrate addition
 				elif (j > (end-30)):
 
-					# Calculate the average and store it in the numpy array
-					#avg = fluorsum/k
-					#averages = np.append(averages, avg)
-
+					# Calculate slope and add to slopes array
 					if x:
 						slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
 						slopes = np.append(slopes, slope)
 
-					# Reset the number of data points being averaged to 0
-					#k = 0
-
 					# Increment the substrate number by 1
 					period += 1
-					
-					# Reset the running sum to 0
-					#fluorsum=0
 
+					# Clear x and y arrays
 					x = []
 					y = []
 
 			else:
 				if j > (start+60):
 
-					# Add the y-value to the running sum
-					#fluorsum += fluor[column+1][rnum]
+					# Add data points to x and y arrays
 					x.append(fluor[column][rnum])
 					y.append(fluor[column+1][rnum])
-
-					# Increment the amount of data points being averaged
-					#k += 1
 
 				# If the time given by the x-value surpasses the ending cutoff time for substrate addition
 				if (rnum == last_row):
 
-					# Calculate the average and store it in the numpy array
-					#avg = fluorsum/k
-					#averages = np.append(averages, avg)
-
+					# Calculate slope and add to slopes array
 					if x:
 						slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
 						slopes = np.append(slopes, slope)
 
-					# Reset the number of data points being averaged to 0
-					#k = 0
-
 					# Increment the substrate number by 1
 					period += 1
 
-					# Reset the running sum to 0
-					#fluorsum=0
-
+					# Clear x and y arrays
 					x = []
 					y = []
 
@@ -198,26 +182,24 @@ def calc_slopes(fluor):
 			rnum += 1
 
 		# Create a pandas series using the numpy array, averages, and append it to the dataframe
-		# that stores the averages, avg_stdcurve
+		# that stores the slopes, slope_df
 		slope_df[substrates[cnum_slope]] = pd.Series(slopes)
 
 		# Increment the column number by 1
 		cnum_slope += 1
-	
-	#print(avg_stdcurve) #debug
-	#print(fluor) #debug
 
 	return slope_df
 
 # Produces a dataframe containing the metadata for the experiments
 def prod_metadata():
-	metadata = pd.DataFrame(columns=['ID','Standard Curve','Slope','Y-Intercept','Substrates','Date'])
+	metadata = pd.DataFrame(columns=['ID','Standard Curve','Slope','Y-Intercept','Substrates', 'Mitochondria', 'Date'])
 	metadata.at[0, 'ID'] = ID
 	metadata.at[0, 'Standard Curve'] = bool_stdcurve
 	metadata.at[0, 'Slope'] = SLOPE
 	metadata.at[0, 'Y-Intercept'] = Y_INT
 	for i in range(0,len(substrates)):
 		metadata.at[i, 'Substrates'] = substrates[i]
+	metadata.at[0, 'Mitochondria'] = MITOCHONDRIA
 	now = datetime.datetime.now()
 	metadata.at[0,'Date'] = now.strftime("%Y-%m-%d")
 
@@ -245,7 +227,20 @@ def plot2(df, plot_name, file_name):
 	plt.savefig(file_name)
 	plt.clf()
 
-# ----MAIN----
+# Performs a correction calculation on the data
+def corrected(df):
+
+	for column in df:
+
+		rnum = 0
+
+		for j in df[column]:
+			df.at[rnum, column] = j/MITOCHONDRIA
+			rnum += 1
+
+	return df
+
+# ------------------------MAIN------------------------
 
 bool_stdcurve = get_input()
 print('-----------------------------------------------')
@@ -307,16 +302,27 @@ for name in files:
 	fluor_raw.columns = column_labels
 	fluor_raw.to_excel(writer, ('Raw Data'))
 
-	# ----SLOPES - RAW DATA----
+	# ----SLOPES CALCULATION - RAW DATA----
 
 	slope_df = calc_slopes(fluor)
+
+	# ----EXPORT - SLOPES DATA----
 
 	# Plots slopes data
 	plot2(slope_df, 'Slopes Data', 'Slopes.png')
 
-	# ----EXPORT - AVG RAW DATA----
-
 	slope_df.to_excel(writer, ('Slopes Data'))
+
+	# ----CORRECTION - SLOPES DATA----
+
+	slope_df = corrected(slope_df)
+
+	# ----EXPORT - CORRECTED SLOPES DATA----
+
+	# Plots corrected slopes data
+	plot2(slope_df, 'Corrected Slopes Data', 'Corrected Slopes.png')
+
+	slope_df.to_excel(writer, ('Corrected Slopes'))
 
 	# ----MEMBRANE POTENTIAL STANDARD CURVE----
 	if(bool_stdcurve):
@@ -332,6 +338,13 @@ for name in files:
 		# Plots averaged standard curve data
 		plot2(slopes_stdcurve, 'Standard Curve Slopes Data', 'Standard_Curve_Slopes.png')
 
+		correct_slopes_stdcurve = slopes_stdcurve.copy()
+
+		correct_slopes_stdcurve = corrected(correct_slopes_stdcurve)
+
+		# Plots averaged standard curve data
+		plot2(correct_slopes_stdcurve, 'Corrected Standard Curve Slopes Data', 'Correct_Standard_Curve_Slopes.png')
+
 	# ----EXPORT---
 
 	# Set column labels
@@ -340,6 +353,7 @@ for name in files:
 	if(bool_stdcurve):
 		fluor.to_excel(writer,('Standard Curve'))
 		slopes_stdcurve.to_excel(writer,('Standard Curve Slopes'))
+		correct_slopes_stdcurve.to_excel(writer,('Corrected Standard Curve Slopes'))
 
 	writer.save()
 	file_num += 1
