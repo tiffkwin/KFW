@@ -1,4 +1,7 @@
-# Initialize
+# Name: Tiffany Nguyen
+# Date: 8.20.18
+# File: membrane_potential.py
+
 import matplotlib
 import numpy as np
 import pandas as pd

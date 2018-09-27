@@ -1,4 +1,7 @@
-# Initialize
+# Name: Tiffany Nguyen
+# Date: 8.27.18
+# File: NADHRedox.py
+
 import matplotlib
 import numpy as np
 import pandas as pd
