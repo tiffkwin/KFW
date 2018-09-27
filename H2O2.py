@@ -1,4 +1,7 @@
-# Initialize# Initialize
+# Name: Tiffany Nguyen
+# Date: 9.25.18
+# File: H2O2.py
+
 import matplotlib
 import numpy as np
 import pandas as pd
