@@ -21,10 +21,10 @@ SLOPE = 0.0
 Y_INT = 0.0
 TIME_PERIOD = 180
 NUM_PERIODS = 8
-sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/Pc','Pc/M','Ac/M','KIC/M']
+sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/O','Oct/M','Ac/M','KIC/M','KIC', 'KIV', 'KMV','KIV/M','KIV/Oct','KMV/M','KMV/Oct','Pyr/C','Oct/C','Pc/C','Ac/C','Glut']
 substrates = []
 ID = ''
-s_num = [0,0,0,0,0,0,0,0,0]
+s_num = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 MITOCHONDRIA = 0.0
 
 # Retrieves input from the user
@@ -45,7 +45,9 @@ def get_input():
 		except ValueError:
 			print('\n[Error]: Please enter a valid number.\n')
 
-	print('\nSubstrate List:\n\t1) Pyr/M\n\t2) G/M\n\t3) Pc/M\n\t4) S/R\n\t5) AKG\n\t6) P/G/M/S/Pc\n\t7) Pc/M\n\t8) Ac/M\n\t9) KIC/M\n')
+	print('\nSubstrate List:', end='\n')
+	for i in range(1,len(sub_list)):
+		print('\t{}) {}'.format(i, sub_list[i]), end='\n')
 	print('To select a substrate, enter the number it corresponds with in the list.\n\n[Example] When selecting Pyr/M\n> Select substrate: 1')
 	print('-----------------------------------------------')
 
@@ -77,7 +79,7 @@ def get_input():
 
 	while True:	
 		try:
-			MITOCHONDRIA = int(input('How many milligrams of mitochondria will you be using? '))
+			MITOCHONDRIA = int(input('How many milligrams of mitochondria did you use? '))
 			break
 		except ValueError:
 			print('\n[Error]: Please enter a valid number.\n')
