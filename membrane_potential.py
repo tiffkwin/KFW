@@ -2,7 +2,6 @@
 # Date: 8.20.18
 # File: membrane_potential.py
 
-import weakref
 import matplotlib
 import numpy as np
 import pandas as pd
@@ -39,21 +38,21 @@ def get_input():
 
 	while True:	
 		try:
-			NUM_SUBSTRATES = int(input('How many substrates will you be testing? '))
+			NUM_SUBSTRATES = int(raw_input('How many substrates will you be testing? '))
 			break
 		except ValueError:
 			print('\n[Error]: Please enter a valid number.\n')
 
-	println('\nSubstrate List:')
+	print('\nSubstrate List:')
 	for i in range(1,len(sub_list)):
-		println('\t{}) {}'.format(i, sub_list[i]))
+		print('\t{}) {}'.format(i, sub_list[i]))
 	print('To select a substrate, enter the number it corresponds with in the list.\n\n[Example] When selecting Pyr/M\n> Select substrate: 1')
 	print('-----------------------------------------------')
 
 	while True:
 		try:
 			for i in range(0,NUM_SUBSTRATES):
-				sub_num = int(input('Select substrate ' + str(i + 1) + ': ')) - 1
+				sub_num = int(raw_input('Select substrate ' + str(i + 1) + ': ')) - 1
 				if s_num[sub_num] > 0:
 					substrates.append(sub_list[sub_num] + '.' + str(s_num[sub_num]))
 				else:
@@ -65,13 +64,13 @@ def get_input():
 			print('\n[Error]: Please start over and enter a valid number for each selection.\n')
 			substrates = []
 
-	stdcurve = input('\nWill you be using the standard curve? [y/n]: ').lower() == 'y'
+	stdcurve = raw_input('\nWill you be using the standard curve? [y/n]: ').lower() == 'y'
 
 	while True:
 		try:
 			if(stdcurve):
-				SLOPE = float(input('\tEnter the slope: '))
-				Y_INT = float(input('\tEnter the y-intercept: '))
+				SLOPE = float(raw_input('\tEnter the slope: '))
+				Y_INT = float(raw_input('\tEnter the y-intercept: '))
 			break
 		except ValueError:
 			print('\n[Error]: Please start over and enter a valid number for each value.\n')

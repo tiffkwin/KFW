@@ -15,6 +15,7 @@ writer = pd.ExcelWriter('Merge.xlsx')
 dfs = {}
 mergedfs = {}
 
+print("Analyzing data...")
 for name in files:
 	print(name)
 	filename = name.split('/')[-1]
@@ -33,6 +34,7 @@ for df in dfs:
 
 for df in mergedfs:
 	(mergedfs[df])['Mean'] = mergedfs[df].mean(axis=1)
+	(mergedfs[df])['SEM'] = (mergedfs[df].drop('Mean', axis=1).std(axis=1)).div(math.sqrt(x))
 
 os.chdir(output_dir)
 
@@ -40,3 +42,4 @@ for df in mergedfs:
 	print(mergedfs[df])
 	mergedfs[df].to_excel(writer,df.replace('/','_'))
 writer.save()
+print('Analysis complete')

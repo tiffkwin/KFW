@@ -34,21 +34,21 @@ def get_input():
 
 	while True:	
 		try:
-			NUM_SUBSTRATES = int(input('How many substrates will you be testing? '))
+			NUM_SUBSTRATES = int(raw_input('How many substrates will you be testing? '))
 			break
 		except ValueError:
 			print('\n[Error]: Please enter a valid number.\n')
 
-	print('\nSubstrate List:', end='\n')
+	print('\nSubstrate List:')
 	for i in range(1,len(sub_list)):
-		print('\t{}) {}'.format(i, sub_list[i]), end='\n')
+		print('\t{}) {}'.format(i, sub_list[i]))
 	print('To select a substrate, enter the number it corresponds with in the list.\n\n[Example] When selecting Pyr/M\n> Select substrate: 1')
 	print('-----------------------------------------------')
 
 	while True:
 		try:
 			for i in range(0,NUM_SUBSTRATES):
-				sub_num = int(input('Select substrate ' + str(i + 1) + ': ')) - 1
+				sub_num = int(raw_input('Select substrate ' + str(i + 1) + ': ')) - 1
 				if s_num[sub_num] > 0:
 					substrates.append(sub_list[sub_num] + '.' + str(s_num[sub_num]))
 				else:

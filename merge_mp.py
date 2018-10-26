@@ -16,9 +16,8 @@ writer = pd.ExcelWriter('Merge.xlsx')
 dfs = {}
 mergedfs = {}
 
-print("Analyzing data", end="")
+print("Analyzing data...")
 for name in files:
-	print(".", end="")
 	filename = name.split('/')[-1]
 	filename = filename.split('.')[0]
 	xl = pd.ExcelFile(name)
@@ -44,4 +43,4 @@ os.chdir(output_dir)
 for df in mergedfs:
 	mergedfs[df].to_excel(writer,df.replace('/','_'))
 writer.save()
-print('\nAnalysis complete')
+print('Analysis complete')
