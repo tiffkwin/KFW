@@ -2,6 +2,14 @@
 # Date: 8.27.18
 # File: NADHRedox.py
 
+# Note: Using Python 2.7
+
+# 1) Place the raw data files (.txt) to be analyzed in a folder with this Python script.
+# 2) Open the command line
+# 3) Navigate to the folder 
+#	  e.g. if folder path is users/data_analysis, then type the command "cd users/data_analysis" without quotations
+# 4) Type command "python NADHRedox.py" without quotations to run
+
 import matplotlib
 import numpy as np
 import pandas as pd
@@ -9,29 +17,36 @@ import matplotlib.pyplot as plt
 plt.style.use('seaborn-darkgrid')
 import seaborn as sns
 import scipy.stats as stats
-#import pickle
-#import sys
 import glob
-#import errno
 import os
 import datetime
 
-# Constants
-TIME_PERIOD = 180
-NUM_PERIODS = 8
-sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/O','Oct/M','Ac/M','KIC/M','KIC', 'KIV', 'KMV','KIV/M','KIV/Oct','KMV/M','KMV/Oct','Pyr/C','Oct/C','Pc/C','Ac/C','Glut']
-substrates = []
-ID = ''
-s_num = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+# Global constants (CHANGE IF NEEDED)
+TIME_PERIOD = 180 # length of trial in seconds
+NUM_PERIODS = 8 # number of additions in one trial
+sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/O','Oct/M','Ac/M','KIC/M','KIC', 'KIV', 'KMV','KIV/M','KIV/Oct','KMV/M','KMV/Oct','Pyr/C','Oct/C','Pc/C','Ac/C','Glut'] # list of available substrates
 
-# Retrieves input from the user
+# Global variables (DO NOT CHANGE)
+substrates = [] # list that contains the substrates used in experiment
+ID = '' # the experiment id
+s_num = [] # list that keeps track of substrate repetitions
+
+# FUNCTION: Retrieves input from the user
+# RETURNS: Nothing
 def get_input():
 	global ID
 	global substrates
+
+	for x in sub_list:
+		s_num.append(0)
+
 	print('\nDATA ANALYSIS')
 	print('-----------------------------------------------')
+
+	# Retrieves experiment id from user
 	ID = input('Enter the ID: ')
 
+	# Retrieves num substrates from user
 	while True:	
 		try:
 			NUM_SUBSTRATES = int(raw_input('How many substrates will you be testing? '))
@@ -39,12 +54,12 @@ def get_input():
 		except ValueError:
 			print('\n[Error]: Please enter a valid number.\n')
 
+	# Retrieves list of substrates used in experiment from user
 	print('\nSubstrate List:')
 	for i in range(1,len(sub_list)):
 		print('\t{}) {}'.format(i, sub_list[i]))
 	print('To select a substrate, enter the number it corresponds with in the list.\n\n[Example] When selecting Pyr/M\n> Select substrate: 1')
 	print('-----------------------------------------------')
-
 	while True:
 		try:
 			for i in range(0,NUM_SUBSTRATES):
@@ -54,13 +69,13 @@ def get_input():
 				else:
 					substrates.append(sub_list[sub_num])
 				s_num[sub_num] += 1
-
 			break
 		except Exception:
 			print('\n[Error]: Please start over and enter a valid number for each selection.\n')
 			substrates = []
 
-# Strips the non-NADH runs from the dataframe
+# FUNCTION: Strips the non-NADH runs from the dataframe
+# RETURNS: The stripped dataframe
 def strip(fluor):
 
 	stripped = pd.DataFrame()
@@ -70,7 +85,8 @@ def strip(fluor):
 
 	return stripped
 
-# Reduces the y values using the eqn: y = (y-min)/(max-min)*100
+# FUNCTION: Reduces the y values using the eqn: y = (y-min)/(max-min)*100
+# RETURNS: The reduced dataframe
 def reduce(fluor, avg_stripped):
 	newdf = fluor.copy()
 	col = 0
@@ -85,7 +101,8 @@ def reduce(fluor, avg_stripped):
 
 	return newdf
 
-# Produces an average for all the data points within a time period
+# FUNCTION: Produces an average for all the data points within a time period
+# RETURNS: The dataframe containing the averagesperiod
 def averages(fluor):
 
 	cnum_avg = 0 # Column num in 'averages' dataframe
@@ -181,7 +198,8 @@ def averages(fluor):
 
 	return avg_stdcurve
 
-# Produces a dataframe containing the metadata for the experiments
+# FUNCTION: Produces a dataframe containing the metadata for the experiments
+# RETURNS: The dataframe containing the metadata
 def prod_metadata():
 	# Prints metadata to dataframe
 	metadata = pd.DataFrame(columns=['ID','Substrates','Date'])
@@ -193,7 +211,8 @@ def prod_metadata():
 
 	return metadata
 
-# Plots a dataframe with an X Y X Y X Y... structure of columns
+# FUNCTION: Plots a dataframe with an X Y X Y X Y... structure of columns and saves the figure
+# RETURNS: Nothing
 def plot1(df, plot_name, file_name):
 	x_col = df[0]
 	run = 1
@@ -208,114 +227,121 @@ def plot1(df, plot_name, file_name):
 	plt.savefig(file_name)
 	plt.clf()
 
-# Plots a dataframe with an S1 S2 S3... structure of columns
+# FUNCTION: Plots a dataframe with an S1 S2 S3... structure of columns and saves the figure
+# RETURNS: Nothing
 def plot2(df, plot_name, file_name):
 	df.plot()
 	plt.title(plot_name)
 	plt.savefig(file_name)
 	plt.clf()
 
-# ----MAIN----
+# FUNCTION: Executes the data analysis process
+# RETURNS: Nothing
+def main():
+	get_input()
+	print('-----------------------------------------------')
+	print("Loading...")
 
-get_input()
-print('-----------------------------------------------')
-print("Loading...")
+	# Retrieves all .txt files in the current working directory
+	root = os.getcwd()
+	path = root + '/*.txt'
+	files = glob.glob(path)   
 
-# Retrieves all .txt files in the current working directory
-root = os.getcwd()
-path = root + '/*.txt'
-files = glob.glob(path)   
+	file_num = 1
 
-file_num = 1
+	# Loops through every .txt file found
+	for name in files:
+		print('Analyzing file ' + str(file_num) + '...')
 
-# Loops through every .txt file found
-for name in files:
-	print('Analyzing file ' + str(file_num) + '...')
+		# Stores file name
+		filename = name.split('/')[-1]
 
-	# Stores file name
-	filename = name.split('/')[-1]
+		# Removes file type from filename
+		shortened_filename = filename.split('.')[0]
 
-	# Removes file type from filename
-	shortened_filename = filename.split('.')[0]
+		output_dir = root +'/' + shortened_filename
+		if (os.path.isdir(output_dir) == False):
+			os.makedirs(shortened_filename)
 
-	output_dir = root +'/' + shortened_filename
-	if (os.path.isdir(output_dir) == False):
-		os.makedirs(shortened_filename)
+		# Creates .xlsx file to output analyzed data to
+		writer = pd.ExcelWriter(shortened_filename + '.xlsx')
 
-	# Creates .xlsx file to output analyzed data to
-	writer = pd.ExcelWriter(shortened_filename + '.xlsx')
+		# ----DATA READ-IN----
 
-	# ----DATA READ-IN----
+		#print(filename) #debug
 
-	#print(filename) #debug
+		# Reads in the data from the csv and stores it as a dataframe
+		fluor_raw = pd.read_csv(filename, sep='\t', skiprows=6, skipfooter=1, header=None, engine='python')
 
-	# Reads in the data from the csv and stores it as a dataframe
-	fluor_raw = pd.read_csv(filename, sep='\t', skiprows=6, skipfooter=1, header=None, engine='python')
+		os.chdir(output_dir)
 
-	os.chdir(output_dir)
+		# Plot raw data
+		plot1(fluor_raw, 'Raw Data', 'Raw.png')
 
-	# Plot raw data
-	plot1(fluor_raw, 'Raw Data', 'Raw.png')
+		# Produces metadata
+		metadata = prod_metadata()
 
-	metadata = prod_metadata()
+		# Exports metadata to .xlsx file
+		metadata.to_excel(writer, ('Metadata'))
 
-	# Exports metadata to .xlsx file
-	metadata.to_excel(writer, ('Metadata'))
+		# Gets column labels
+		column_labels = []
+		for i in range(0,len(fluor_raw.columns)):
+			if(i % 2 == 0):
+				column_labels.append('X')
+			else:
+				column_labels.append('Y')
 
-	# Gets column labels
-	column_labels = []
-	for i in range(0,len(fluor_raw.columns)):
-		if(i % 2 == 0):
-			column_labels.append('X')
-		else:
-			column_labels.append('Y')
+		# ----EXPORT TO EXCEL - RAW DATA----
 
-	# ----EXPORT - RAW DATA----
+		fluor = fluor_raw.copy()
+		fluor_raw.columns = column_labels
+		fluor_raw.to_excel(writer, ('Raw Data'))
 
-	fluor = fluor_raw.copy()
-	fluor_raw.columns = column_labels
-	fluor_raw.to_excel(writer, ('Raw Data'))
+		# ----STRIP - RAW DATA----
 
-	# ----STRIP - RAW DATA----
+		fluor = strip(fluor)
 
-	fluor = strip(fluor)
+		# ----EXPORT TO EXCEL - STRIPPED DATA----
+		fluor.columns = list(range(0,len(fluor.columns)))
 
-	# ----EXPORT - STRIPPED DATA----
-	fluor.columns = list(range(0,len(fluor.columns)))
+		fluor.to_excel(writer, ('Stripped Data'))
 
-	fluor.to_excel(writer, ('Stripped Data'))
+		# Plot stripped data
+		plot1(fluor, 'Stripped Data', 'Stripped.png')
 
-	# Plot stripped data
-	plot1(fluor, 'Stripped Data', 'Stripped.png')
+		avg_stripped = fluor.copy()
+		avg_stripped = averages(avg_stripped)
 
-	avg_stripped = fluor.copy()
-	avg_stripped = averages(avg_stripped)
+		# ----REDUCTION - STRIPPED DATA----
+		
+		fluor = reduce(fluor, avg_stripped)
 
-	# ----REDUCTION - STRIPPED DATA----
-	
-	fluor = reduce(fluor, avg_stripped)
+		# ----EXPORT TO EXCEL - REDUCED DATA----
 
-	# ----EXPORT - REDUCED DATA----
+		fluor.to_excel(writer, ('Reduced Data'))
 
-	fluor.to_excel(writer, ('Reduced Data'))
+		# Plot reduced data
+		plot1(fluor, 'Reduced Data', 'Reduced.png')
 
-	# Plot reduced data
-	plot1(fluor, 'Reduced Data', 'Reduced.png')
+		# ----AVERAGES - REDUCED DATA----
 
-	# ----AVERAGES - REDUCED DATA----
+		avg = averages(fluor)
 
-	avg = averages(fluor)
+		# Plot averaged reduced data
+		plot2(avg, 'Averaged Reduced Data', 'Avg_Reduced.png')
 
-	# Plot averaged reduced data
-	plot2(avg, 'Averaged Reduced Data', 'Avg_Reduced.png')
+		# ----EXPORT TO EXCEL - AVG REDUCED DATA----
 
-	# ----EXPORT - AVG REDUCED DATA----
+		avg.to_excel(writer, ('Averaged Reduced Data'))
 
-	avg.to_excel(writer, ('Averaged Reduced Data'))
+		# Saves excel file and moves on to next file to be analyzed if there is one
+		writer.save()
+		file_num += 1
+		os.chdir(root)
 
-	writer.save()
-	file_num += 1
-	os.chdir(root)
+	print('Analysis complete')
+	print('-----------------------------------------------')
 
-print('Analysis complete')
-print('-----------------------------------------------')
+# Executes main()
+main()
