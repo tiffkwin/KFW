@@ -283,6 +283,9 @@ def main():
 
 	file_num = 1
 
+	if (os.path.isdir(root + '/output') == False):
+			os.makedirs('output')
+
 	# Loops through every .txt file found
 	for name in files:
 		print('Analyzing file ' + str(file_num) + '...')
@@ -293,9 +296,12 @@ def main():
 		# Removes file type from filename
 		shortened_filename = filename.split('.')[0]
 
-		output_dir = root +'/' + shortened_filename
+		output_dir = root +'/output/' + shortened_filename
+
 		if (os.path.isdir(output_dir) == False):
+			os.chdir(root + '/output')
 			os.makedirs(shortened_filename)
+			os.chdir(root)
 
 		# Creates .xlsx file to output analyzed data to
 		writer = pd.ExcelWriter(shortened_filename + '.xlsx')
