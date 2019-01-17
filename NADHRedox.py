@@ -25,17 +25,21 @@ import datetime
 TIME_PERIOD = 180 # length of trial in seconds
 NUM_PERIODS = 8 # number of additions in one trial
 sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/O','Oct/M','Ac/M','KIC/M','KIC', 'KIV', 'KMV','KIV/M','KIV/Oct','KMV/M','KMV/Oct','Pyr/C','Oct/C','Pc/C','Ac/C','Glut'] # list of available substrates
+add_list = ['Buffer', 'Mito', 'Substrate', 'PCR', 'Drug', 'Vehicle', 'FCCP', 'Oligo', 'Rot', 'Ant A', 'AF', 'BCNU'] # list of available additions
 
 # Global variables (DO NOT CHANGE)
 substrates = [] # list that contains the substrates used in experiment
 ID = '' # the experiment id
 s_num = [] # list that keeps track of substrate repetitions
+additions = [] # list that contains the additions used in experiment
 
 # FUNCTION: Retrieves input from the user
 # RETURNS: Nothing
 def get_input():
 	global ID
 	global substrates
+	global NUM_PERIODS
+	global additions
 
 	for x in sub_list:
 		s_num.append(0)
@@ -44,7 +48,7 @@ def get_input():
 	print('-----------------------------------------------')
 
 	# Retrieves experiment id from user
-	ID = input('Enter the ID: ')
+	ID = raw_input('Enter the ID: ')
 
 	# Retrieves num substrates from user
 	while True:	
@@ -56,13 +60,13 @@ def get_input():
 
 	# Retrieves list of substrates used in experiment from user
 	print('\nSubstrate List:')
-	for i in range(1,len(sub_list)):
-		print('\t{}) {}'.format(i, sub_list[i]))
+	for i in range(len(sub_list)):
+		print('\t{}) {}'.format(i+1, sub_list[i]))
 	print('To select a substrate, enter the number it corresponds with in the list.\n\n[Example] When selecting Pyr/M\n> Select substrate: 1')
 	print('-----------------------------------------------')
 	while True:
 		try:
-			for i in range(0,NUM_SUBSTRATES):
+			for i in range(NUM_SUBSTRATES):
 				sub_num = int(raw_input('Select substrate ' + str(i + 1) + ': ')) - 1
 				if s_num[sub_num] > 0:
 					substrates.append(sub_list[sub_num] + '.' + str(s_num[sub_num]))
@@ -73,6 +77,31 @@ def get_input():
 		except Exception:
 			print('\n[Error]: Please start over and enter a valid number for each selection.\n')
 			substrates = []
+	
+	# Retrieves num additions from user
+	while True:	
+		try:
+			NUM_ADDITIONS = int(raw_input('\nHow many additions will you be making? '))
+			NUM_PERIODS = NUM_ADDITIONS
+			break
+		except ValueError:
+			print('\n[Error]: Please enter a valid number.\n')
+
+	# Retrieves list of additions used in experiment from user
+	print('\nAddition List:')
+	for i in range(len(add_list)):
+		print('\t{}) {}'.format(i+1, add_list[i]))
+	print('To select an addition, enter the number it corresponds with in the list.\n\n[Example] When selecting Buffer\n> Select addition: 1')
+	print('-----------------------------------------------')
+	while True:
+		try:
+			for i in range(NUM_ADDITIONS):
+				add_num = int(raw_input('Select addition ' + str(i + 1) + ': ')) - 1
+				additions.append(add_list[add_num])
+			break
+		except Exception:
+			print('\n[Error]: Please start over and enter a valid number for each selection.\n')
+			additions = []
 
 # FUNCTION: Strips the non-NADH runs from the dataframe
 # RETURNS: The stripped dataframe
@@ -202,10 +231,12 @@ def averages(fluor):
 # RETURNS: The dataframe containing the metadata
 def prod_metadata():
 	# Prints metadata to dataframe
-	metadata = pd.DataFrame(columns=['ID','Substrates','Date'])
+	metadata = pd.DataFrame(columns=['ID','Substrates', 'Additions', 'Date'])
 	metadata.at[0, 'ID'] = ID
-	for i in range(0,len(substrates)):
+	for i in range(len(substrates)):
 		metadata.at[i, 'Substrates'] = substrates[i]
+	for i in range(len(additions)):
+		metadata.at[i, 'Additions'] = additions[i]
 	now = datetime.datetime.now()
 	metadata.at[0,'Date'] = now.strftime("%Y-%m-%d")
 
