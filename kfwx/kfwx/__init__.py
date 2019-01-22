@@ -25,9 +25,9 @@ while True:
 if(NUM_ASSAY == 1):
     membrane_potential.main()
 elif(NUM_ASSAY == 2):
-    H2O2.main()
-elif(NUM_ASSAY == 3):
     NADHRedox.main()
+elif(NUM_ASSAY == 3):
+    H2O2.main()
 elif(NUM_ASSAY == 4):
     merge_mp.main()
 elif(NUM_ASSAY == 5):
