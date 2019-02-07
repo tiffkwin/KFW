@@ -45,6 +45,7 @@ def get_input():
 	global substrates
 	global MITOCHONDRIA
 	global additions
+	global NUM_PERIODS
 
 	for x in sub_list:
 		s_num.append(0)

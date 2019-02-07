@@ -5,7 +5,7 @@ import merge_mp
 import merge_nadh
 import merge_h2o2
 
-tool_list = ['Membrane Potential', 'NADH Redox', 'H2O2']#, 'Merge MP', 'Merge NADH Redox', 'Merge H2O2']
+tool_list = ['Membrane Potential', 'NADH Redox', 'H2O2', 'Merge MP', 'Merge NADH Redox', 'Merge H2O2']
 NUM_TOOL = 0
 
 # Retrieves assay type from user
@@ -28,10 +28,10 @@ elif(NUM_ASSAY == 2):
     NADHRedox.main()
 elif(NUM_ASSAY == 3):
     H2O2.main()
-#elif(NUM_ASSAY == 4):
-#    merge_mp.main()
-#elif(NUM_ASSAY == 5):
-#    merge_nadh.main()
-#elif(NUM_ASSAY == 6):
-#    merge_h2o2.main()
+elif(NUM_ASSAY == 4):
+    merge_mp.main()
+elif(NUM_ASSAY == 5):
+    merge_nadh.main()
+elif(NUM_ASSAY == 6):
+    merge_h2o2.main()
     

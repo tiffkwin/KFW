@@ -42,6 +42,8 @@ def get_input():
 	global SLOPE
 	global Y_INT
 	global substrates
+	global NUM_PERIODS
+	global additions
 	
 	for x in sub_list:
 		s_num.append(0)
@@ -250,7 +252,7 @@ def corrected(avg_raw):
 		ala_avg = avg_raw[column][avg_raw.apply(pd.Series.last_valid_index)[column]]
 
 		for j in avg_raw[column]:
-			avg_raw.at[rnum, column] = j/ala_avg
+			avg_raw.at[rnum, column] = j-ala_avg
 			rnum += 1
 
 	return avg_raw

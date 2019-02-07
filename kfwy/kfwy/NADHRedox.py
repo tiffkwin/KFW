@@ -38,6 +38,8 @@ additions = [] # list that contains the additions used in experiment
 def get_input():
 	global ID
 	global substrates
+	global NUM_PERIODS
+	global additions
 
 	for x in sub_list:
 		s_num.append(0)
@@ -118,11 +120,11 @@ def reduce(fluor, avg_stripped):
 	newdf = fluor.copy()
 	col = 0
 	for column in newdf[newdf.columns[::2]]:
-		max_y = avg_stripped[substrates[col]].iloc[-2]
+		#max_y = avg_stripped[substrates[col]].iloc[-2]
 		min_y = avg_stripped[substrates[col]].iloc[-1]
 		for j in range(0,newdf.apply(pd.Series.last_valid_index)[column] + 1):
 			y = newdf[column+1][j]
-			val = (y - min_y)/(max_y - min_y)*100
+			val = y - min_y
 			newdf.at[j,column+1] = val
 		col += 1	
 
