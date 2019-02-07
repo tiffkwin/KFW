@@ -5,9 +5,9 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="kfwy",
-    version="0.0.2",
+    version="0.0.12",
     author="Tiffany Nguyen",
-    description="A data analysis package for the KFW lab",
+    description="A data analysis toolkit for the KFW lab (Windows)",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/tiffkwin/KFW",
