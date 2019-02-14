@@ -39,14 +39,15 @@ def main():
 		filename = name.split('/')[-1]
 		filename = filename.split('.')[0]
 		xl = pd.ExcelFile(name)
-		dfs[filename] = xl.parse("Averaged Standard Curve")
+		dfs[filename] = xl.parse("Corrected Raw Data")
 
 	# Loops through each dataframe
 	for df in dfs:
 
 		# Merges dataframes and normalizes each column's 
 		for column_name in dfs[df].columns:
-			normalized_col_name = column_name.split(".")[0]
+			#normalized_col_name = column_name.split(".")[0]
+			normalized_col_name = column_name
 			if normalized_col_name in mergedfs:
 				(mergedfs[normalized_col_name])[df] = (dfs[df])[column_name]
 			else:
@@ -68,3 +69,5 @@ def main():
 	# Saves excel file
 	writer.save()
 	print('Analysis complete')
+
+#main()
