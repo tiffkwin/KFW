@@ -1,6 +1,6 @@
 # Name: Tiffany Nguyen
 # Date: 8.20.18
-# File: membrane_potential.py
+# File: membrane_potential.py (kfwy)
 
 # Note: Using Python 2.7
 
@@ -24,8 +24,8 @@ import datetime
 # Global constants (CHANGE IF NEEDED)
 TIME_PERIOD = 180 # length of trial in seconds
 NUM_PERIODS = 8 # number of additions in one trial
-sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/O','Oct/M','Ac/M','KIC/M','KIC', 'KIV', 'KMV','KIV/M','KIV/Oct','KMV/M','KMV/Oct','Pyr/C','Oct/C','Pc/C','Ac/C','Glut'] # list of available substrates
-add_list = ['Buffer', 'Mito', 'Substrate', 'PCR', 'Drug', 'Vehicle', 'FCCP', 'Oligo', 'Rot', 'Ant A', 'AF', 'BCNU'] # list of available additions
+sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/O','Oct/M','Ac/M','KIC/M','KIC', 'KIV', 'KMV','KIV/M','KIV/Oct','KMV/M','KMV/Oct','Pyr/C','Oct/C','Pc/C','Ac/C','Glut', 'None'] # list of available substrates
+add_list = ['Buffer', 'Mito', 'Substrate', 'PCR', 'Drug', 'Vehicle', 'FCCP', 'Oligo', 'Rot', 'Ant A', 'AF', 'BCNU', 'CN', 'Ala', 'Other'] # list of available additions
 
 # Global variables (DO NOT CHANGE)
 SLOPE = 0.0
@@ -34,6 +34,7 @@ substrates = [] # list that contains the substrates used in experiment
 ID = '' # the experiment id
 s_num = [] # list that keeps track of substrate repetitions
 additions = [] # list that contains the additions used in experiment
+groups = [] # list containing group descriptions
 
 # FUNCTION: Retrieves input from the user
 # RETURNS: A boolean where True indicates use of the standard curve
@@ -44,6 +45,7 @@ def get_input():
 	global substrates
 	global NUM_PERIODS
 	global additions
+	global groups
 	
 	for x in sub_list:
 		s_num.append(0)
@@ -53,6 +55,17 @@ def get_input():
 
 	# Retrieves experiment id from user
 	ID = raw_input('Enter the ID: ')
+
+	# Retrieves groups from user
+	while True:
+		try:
+			NUM_GROUPS = int(raw_input('How many groups are there? (1-4) '))
+			for i in range(0,NUM_GROUPS):
+				group_description = raw_input('Description for Group ' + str(i + 1) + ': ')
+				groups.append('G' + str(i+1) + ': ' + group_description)
+			break
+		except ValueError:
+			print('\n[Error]: Please enter a valid number.\n')
 
 	# Retrieves num substrates from user
 	while True:	
@@ -72,11 +85,13 @@ def get_input():
 		try:
 			for i in range(0,NUM_SUBSTRATES):
 				sub_num = int(raw_input('Select substrate ' + str(i + 1) + ': ')) - 1
-				if s_num[sub_num] > 0:
-					substrates.append(sub_list[sub_num] + '.' + str(s_num[sub_num]))
-				else:
-					substrates.append(sub_list[sub_num])
-				s_num[sub_num] += 1
+				group_num = int(raw_input('Select group number (1-4): '))
+				substrates.append(sub_list[sub_num] + '_G' + str(group_num))
+				#if s_num[sub_num] > 0:
+				#	substrates.append(sub_list[sub_num] + '.' + str(s_num[sub_num]))
+				#else:
+				#	substrates.append(sub_list[sub_num])
+				#s_num[sub_num] += 1
 			break
 		except Exception:
 			print('\n[Error]: Please start over and enter a valid number for each selection.\n')
@@ -260,11 +275,13 @@ def corrected(avg_raw):
 # FUNCTION: Produces a dataframe containing the metadata for the experiments
 # RETURNS: The dataframe containing the metadata
 def prod_metadata(bool_stdcurve):
-	metadata = pd.DataFrame(columns=['ID','Standard Curve','Slope','Y-Intercept','Substrates','Additions', 'Date'])
+	metadata = pd.DataFrame(columns=['ID','Standard Curve','Slope','Y-Intercept','Groups', 'Substrates', 'Additions', 'Date'])
 	metadata.at[0, 'ID'] = ID
 	metadata.at[0, 'Standard Curve'] = bool_stdcurve
 	metadata.at[0, 'Slope'] = SLOPE
 	metadata.at[0, 'Y-Intercept'] = Y_INT
+	for i in range(0, len(groups)):
+		metadata.at[i, 'Groups'] = groups[i]
 	for i in range(0,len(substrates)):
 		metadata.at[i, 'Substrates'] = substrates[i]
 	for i in range(len(additions)):

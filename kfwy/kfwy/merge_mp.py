@@ -47,7 +47,8 @@ def main():
 
 		# Merges dataframes and normalizes each column's 
 		for column_name in dfs[df].columns:
-			normalized_col_name = column_name.split(".")[0]
+			#normalized_col_name = column_name.split(".")[0]
+			normalized_col_name = column_name
 			if normalized_col_name in mergedfs:
 				(mergedfs[normalized_col_name])[df] = (dfs[df])[column_name]
 			else:
