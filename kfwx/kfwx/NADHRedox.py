@@ -20,6 +20,7 @@ import scipy.stats as stats
 import glob
 import os
 import datetime
+from sys import platform
 
 # Global constants (CHANGE IF NEEDED)
 TIME_PERIOD = 180 # length of trial in seconds
@@ -59,6 +60,9 @@ def get_input():
 			for i in range(0,NUM_GROUPS):
 				group_description = raw_input('Description for Group ' + str(i + 1) + ': ')
 				groups.append('G' + str(i+1) + ': ' + group_description)
+			break
+		except ValueError:
+			print('\n[Error]: Please enter a valid number.\n')
 
 	# Retrieves num substrates from user
 	while True:	
@@ -283,34 +287,55 @@ def plot2(df, plot_name, file_name):
 # FUNCTION: Executes the data analysis process
 # RETURNS: Nothing
 def main():
+	mac = True
+	if platform == "win32":
+		mac = False
+
 	get_input()
 	print('-----------------------------------------------')
 	print("Loading...")
 
 	# Retrieves all .txt files in the current working directory
 	root = os.getcwd()
-	path = root + '/*.txt'
+	if mac:
+		path = root + '/*.txt'
+	else:
+		path = root + '\*.txt'
+
 	files = glob.glob(path)   
 
 	file_num = 1
 
-	if (os.path.isdir(root + '/output') == False):
+	if mac:
+		if (os.path.isdir(root + '/output') == False):
+			os.makedirs('output')
+	else:
+		if (os.path.isdir(root + '\output') == False):
 			os.makedirs('output')
 
 	# Loops through every .txt file found
 	for name in files:
 		print('Analyzing file ' + str(file_num) + '...')
 
-		# Stores file name
-		filename = name.split('/')[-1]
+		if mac:
+			# Stores file name
+			filename = name.split('/')[-1]
+		else:
+			filename = name.split('\\')[-1]
 
 		# Removes file type from filename
 		shortened_filename = filename.split('.')[0]
 
-		output_dir = root +'/output/' + shortened_filename
+		if mac:
+			output_dir = root +'/output/' + shortened_filename
+		else:
+			output_dir = root +'\output\\' + shortened_filename
 
 		if (os.path.isdir(output_dir) == False):
-			os.chdir(root + '/output')
+			if mac:
+				os.chdir(root + '/output')
+			else:
+				os.chdir(root + '\output')
 			os.makedirs(shortened_filename)
 			os.chdir(root)
 

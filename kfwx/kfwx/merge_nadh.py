@@ -14,14 +14,26 @@ import xlrd
 import os
 import glob
 import pandas as pd
+from sys import platform
 
 def main():
+	mac = True
+	if platform == "win32":
+		mac = False
+
 	root = os.getcwd()
-	path = root + '/*.xlsx'
+	if mac:
+		path = root + '/*.xlsx'
+	else:
+		path = root + '\*.xlsx'
+
 	files = glob.glob(path)  
 
-	# Creates output folder called "Merge"
-	output_dir = root +'/Merge'
+	if mac:
+		# Creates output folder called "Merge"
+		output_dir = root +'/Merge'
+	else:
+		output_dir = root +'\Merge'
 	if (os.path.isdir(output_dir) == False):
 		os.makedirs('Merge')
 
@@ -36,8 +48,13 @@ def main():
 
 		# Saves each worksheet in the file as a dataframe
 		print(name)
-		filename = name.split('/')[-1]
+		if mac:
+			filename = name.split('/')[-1]
+		else:
+			filename = name.split('\\')[-1]
 		filename = filename.split('.')[0]
+		if not mac:
+			filename = filename.decode("ascii", errors="ignore").encode()
 		xl = pd.ExcelFile(name)
 		dfs[filename] = xl.parse("Averaged Reduced Data")
 

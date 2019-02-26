@@ -20,6 +20,7 @@ import scipy.stats as stats
 import glob
 import os
 import datetime
+from sys import platform
 
 # Global constants (CHANGE IF NEEDED)
 TIME_PERIOD = 180 # length of trial in seconds
@@ -28,12 +29,15 @@ sub_list = ['Pyr/M','G/M','Pc/M','S/R','AKG','P/G/M/S/O','Oct/M','Ac/M','KIC/M',
 add_list = ['Buffer', 'Mito', 'Substrate', 'PCR', 'Drug', 'Vehicle', 'FCCP', 'Oligo', 'Rot', 'Ant A', 'AF', 'BCNU', 'CN', 'Ala', 'Other'] # list of available additions
 
 # Global variables (DO NOT CHANGE)
-SLOPE = 0.0
-Y_INT = 0.0
+SLOPE_ATP = 0.0
+Y_INT_ATP = 0.0
+SLOPE_H2O2 = 0.0
+Y_INT_H2O2 = 0.0
 substrates = [] # list that contains the substrates used in experiment
 ID = '' # the experiment id
 s_num = [] # list that keeps track of substrate repetitions
-MITOCHONDRIA = 0.0 # mg of mitochondria used in experiment
+MITOCHONDRIA_ATP = 0.0 # mg of mitochondria used in experiment (ATP)
+MITOCHONDRIA_H2O2 = 0.0 # mg of mitochondria used in experiment (H2O2)
 additions = [] # list that contains the additions used in experiment
 groups = [] # list of group descriptions
 
@@ -41,10 +45,13 @@ groups = [] # list of group descriptions
 # RETURNS: A boolean where True indicates use of the standard curve
 def get_input():
 	global ID
-	global SLOPE
-	global Y_INT
+	global SLOPE_H2O2
+	global Y_INT_H2O2
+	global SLOPE_ATP
+	global Y_INT_ATP
 	global substrates
-	global MITOCHONDRIA
+	global MITOCHONDRIA_ATP
+	global MITOCHONDRIA_H2O2
 	global additions
 	global NUM_PERIODS
 	global groups
@@ -65,6 +72,9 @@ def get_input():
 			for i in range(0,NUM_GROUPS):
 				group_description = raw_input('Description for Group ' + str(i + 1) + ': ')
 				groups.append('G' + str(i+1) + ': ' + group_description)
+			break
+		except ValueError:
+			print('\n[Error]: Please enter a valid number.\n')
 
 	# Retrieves num substrates from user
 	while True:	
@@ -85,7 +95,7 @@ def get_input():
 			for i in range(0,NUM_SUBSTRATES):
 				sub_num = int(raw_input('Select substrate ' + str(i + 1) + ': ')) - 1
 				group_num = int(raw_input('Select group number (1-4): '))
-				#substrates.append(sub_list[sub_num] + '_G' + str(group_num))
+				substrates.append(sub_list[sub_num] + '_G' + str(group_num))
 				#if s_num[sub_num] > 0:
 				#	substrates.append(sub_list[sub_num] + '.' + str(s_num[sub_num]))
 				#else:
@@ -129,8 +139,18 @@ def get_input():
 	while True:
 		try:
 			if(stdcurve):
-				SLOPE = float(raw_input('\tEnter the slope: '))
-				Y_INT = float(raw_input('\tEnter the y-intercept: '))
+				SLOPE_ATP = float(raw_input('\tEnter the slope for ATP: '))
+				Y_INT_ATP = float(raw_input('\tEnter the y-intercept for ATP: '))
+			break
+		except ValueError:
+			print('\n[Error]: Please start over and enter a valid number for each value.\n')
+
+	# Retrieves slope and y-intercept from user if standard curve is being used
+	while True:
+		try:
+			if(stdcurve):
+				SLOPE_H2O2 = float(raw_input('\tEnter the slope for H2O2: '))
+				Y_INT_H2O2 = float(raw_input('\tEnter the y-intercept for H2O2: '))
 			break
 		except ValueError:
 			print('\n[Error]: Please start over and enter a valid number for each value.\n')
@@ -138,7 +158,15 @@ def get_input():
 	# Retrieves mg amount of mitochondria used in experiment from user
 	while True:	
 		try:
-			MITOCHONDRIA = int(raw_input('How many milligrams of mitochondria did you use? '))
+			MITOCHONDRIA_ATP = int(raw_input('How many milligrams of mitochondria did you use for ATP? '))
+			break
+		except ValueError:
+			print('\n[Error]: Please enter a valid number.\n')
+
+	# Retrieves mg amount of mitochondria used in experiment from user
+	while True:	
+		try:
+			MITOCHONDRIA_H2O2 = int(raw_input('How many milligrams of mitochondria did you use for H2O2? '))
 			break
 		except ValueError:
 			print('\n[Error]: Please enter a valid number.\n')
@@ -148,7 +176,7 @@ def get_input():
 
 # FUNCTION: Adjusts the y-values using the standard curve calculation
 # RETURNS: The adjusted dataframe
-def std_curve(fluor):
+def std_curve(fluor, Y_INT, SLOPE):
 
 	# Iterrates through every row in the dataframe
 	for index, row in fluor.iterrows():
@@ -171,12 +199,12 @@ def std_curve(fluor):
 
 # FUNCTION: Calculates the slope for all the data points within a time period
 # RETURNS: The dataframe containing the slopes
-def calc_slopes(fluor):
+def calc_slopes(fluor, subs):
 
 	cnum_slope = 0 # Column num in 'slopes' dataframe
 
 	# Creates empty dataframe to store averages in
-	slope_df = pd.DataFrame(columns=substrates)
+	slope_df = pd.DataFrame(columns=subs)
 
 	# Iterrates through every other column in the dataframe
 	for column in fluor[fluor.columns[::2]]:
@@ -250,7 +278,7 @@ def calc_slopes(fluor):
 
 		# Create a pandas series using the numpy array, averages, and append it to the dataframe
 		# that stores the slopes, slope_df
-		slope_df[substrates[cnum_slope]] = pd.Series(slopes)
+		slope_df[subs[cnum_slope]] = pd.Series(slopes)
 
 		# Increment the column number by 1
 		cnum_slope += 1
@@ -260,18 +288,21 @@ def calc_slopes(fluor):
 # FUNCTION: Produces a dataframe containing the metadata for the experiments
 # RETURNS: The dataframe containing the metadataexperiments
 def prod_metadata(bool_stdcurve):
-	metadata = pd.DataFrame(columns=['ID','Standard Curve','Slope','Y-Intercept','Groups', 'Substrates', 'Additions', 'Mitochondria', 'Date'])
+	metadata = pd.DataFrame(columns=['ID','Standard Curve','Slopes','Y-Intercepts','Groups', 'Substrates', 'Additions', 'Mitochondria', 'Date'])
 	metadata.at[0, 'ID'] = ID
 	metadata.at[0, 'Standard Curve'] = bool_stdcurve
-	metadata.at[0, 'Slope'] = SLOPE
-	metadata.at[0, 'Y-Intercept'] = Y_INT
+	metadata.at[0, 'Slopes'] = 'H2O2: ' + str(SLOPE_H2O2)
+	metadata.at[1, 'Slopes'] = 'ATP: ' + str(SLOPE_ATP)
+	metadata.at[0, 'Y-Intercepts'] = 'H2O2: ' + str(Y_INT_H2O2)
+	metadata.at[1, 'Y-Intercepts'] = 'ATP: ' + str(Y_INT_ATP)
 	for i in range(0, len(groups)):
 		metadata.at[i, 'Groups'] = groups[i]
 	for i in range(0,len(substrates)):
 		metadata.at[i, 'Substrates'] = substrates[i]
 	for i in range(len(additions)):
 		metadata.at[i, 'Additions'] = additions[i]
-	metadata.at[0, 'Mitochondria'] = MITOCHONDRIA
+	metadata.at[0, 'Mitochondria'] = 'H2O2: ' + str(MITOCHONDRIA_H2O2)
+	metadata.at[1, 'Mitochondria'] = 'ATP: ' + str(MITOCHONDRIA_ATP)
 	now = datetime.datetime.now()
 	metadata.at[0,'Date'] = now.strftime("%Y-%m-%d")
 
@@ -303,7 +334,7 @@ def plot2(df, plot_name, file_name):
 
 # FUNCTION: Divides all the datapoints by the mg of mitochondria used to produce a corrected dataset
 # RETURNS: The corrected dataframe
-def corrected(df):
+def corrected(df, MITOCHONDRIA):
 
 	for column in df:
 
@@ -319,6 +350,9 @@ def corrected(df):
 # FUNCTION: Executes the data analysis process
 # RETURNS: Nothing
 def main():
+	mac = True
+	if platform == "win32":
+		mac = False
 
 	bool_stdcurve = get_input()
 	print('-----------------------------------------------')
@@ -337,17 +371,27 @@ def main():
 	# Loops through every .txt file found
 	for name in files:
 		print('Analyzing file ' + str(file_num) + '...')
+		print(substrates)
 
-		# Stores file name
-		filename = name.split('/')[-1]
+		if mac:
+			# Stores file name
+			filename = name.split('/')[-1]
+		else:
+			filename = name.split('\\')[-1]
 
 		# Removes file type from filename
 		shortened_filename = filename.split('.')[0]
 
-		output_dir = root +'/output/' + shortened_filename
+		if mac:
+			output_dir = root +'/output/' + shortened_filename
+		else:
+			output_dir = root +'\output\\' + shortened_filename
 
 		if (os.path.isdir(output_dir) == False):
-			os.chdir(root + '/output')
+			if mac:
+				os.chdir(root + '/output')
+			else:
+				os.chdir(root + '\output')
 			os.makedirs(shortened_filename)
 			os.chdir(root)
 
@@ -361,10 +405,22 @@ def main():
 		# Reads in the data from the csv and stores it as a dataframe
 		fluor_raw = pd.read_csv(filename, sep='\t', skiprows=6, skipfooter=1, header=None, engine='python')
 
-		os.chdir(output_dir)
+		atp = pd.DataFrame()
 
+		for column in fluor_raw[fluor_raw.columns[:2]]:
+			atp[column] = fluor_raw[column]
+		
+		fluor_raw = fluor_raw.drop(fluor_raw.columns[[0, 1]], axis=1) ###FIX STUFF
+
+		os.chdir(output_dir)
+		new_cols = []
+		for col in fluor_raw.columns:
+			new_cols.append(int(col)-2)
+
+		fluor_raw.columns = new_cols
 		# Plot raw data
-		plot1(fluor_raw, 'Raw Data', 'Raw.png')
+		plot1(fluor_raw, 'H2O2 Raw Data', 'H2O2 Raw.png')
+		plot1(atp, 'ATP Raw Data', 'ATP Raw.png')
 
 		# Produces metadata
 		metadata = prod_metadata(bool_stdcurve)
@@ -384,60 +440,89 @@ def main():
 
 		fluor = fluor_raw.copy()
 		fluor_raw.columns = column_labels
-		fluor_raw.to_excel(writer, ('Raw Data'))
+		fluor_raw.to_excel(writer, ('H2O2 Raw Data'))
+
+		column_labels_atp = []
+		for i in range(0,len(atp.columns)):
+			if(i % 2 == 0):
+				column_labels_atp.append('X')
+			else:
+				column_labels_atp.append('Y')
+
+		atp_xy = atp.copy()
+		atp.columns = column_labels_atp
+		atp.to_excel(writer, ('ATP Raw Data'))
 
 		# ----SLOPES CALCULATION - RAW DATA----
 
-		slope_df = calc_slopes(fluor)
+		slope_df = calc_slopes(fluor, substrates[1:])
+		slope_atp = calc_slopes(atp_xy, [substrates[0]])
 
 		# ----EXPORT - SLOPES DATA----
 
 		# Plots slopes data
-		plot2(slope_df, 'Slopes Data', 'Slopes.png')
+		plot2(slope_df, 'H2O2 Slopes Data', 'H2O2 Slopes.png')
+		plot2(slope_atp, 'ATP Slopes Data', 'ATP Slopes.png')
 
-		slope_df.to_excel(writer, ('Slopes Data'))
+		slope_df.to_excel(writer, ('H2O2 Slopes Data'))
+		slope_atp.to_excel(writer, ('ATP Slopes Data'))
 
 		# ----CORRECTION - SLOPES DATA----
 
-		slope_df = corrected(slope_df)
+		slope_df = corrected(slope_df, MITOCHONDRIA_H2O2)
+		slope_atp = corrected(slope_atp, MITOCHONDRIA_ATP)
 
 		# ----EXPORT - CORRECTED SLOPES DATA----
 
 		# Plots corrected slopes data
-		plot2(slope_df, 'Corrected Slopes Data', 'Corrected Slopes.png')
+		plot2(slope_df, 'Corrected H2O2 Slopes Data', 'Corrected H2O2 Slopes.png')
+		plot2(slope_atp, 'Corrected ATP Slopes Data', 'Corrected ATP Slopes.png')
 
-		slope_df.to_excel(writer, ('Corrected Slopes'))
+		slope_df.to_excel(writer, ('Corrected H2O2 Slopes'))
+		slope_atp.to_excel(writer, ('Corrected ATP Slopes'))
 
 		# ----MEMBRANE POTENTIAL STANDARD CURVE----
 		if(bool_stdcurve):
-			fluor = std_curve(fluor)
+			fluor = std_curve(fluor, Y_INT_H2O2, SLOPE_H2O2)
+			atp_xy = std_curve(atp_xy, Y_INT_ATP, SLOPE_ATP)
 
 			# Plots standard curve data
-			plot1(fluor, 'Standard Curve Data', 'Standard_Curve.png')
+			plot1(fluor, 'H2O2 Std Curve Data', 'H2O2 Std Curve.png')
+			plot1(atp_xy, 'ATP Std Curve', 'ATP Std Curve.png')
 
 		# ----AVERAGES - STANDARD CURVE----
 
-			slopes_stdcurve = calc_slopes(fluor)
+			slopes_stdcurve = calc_slopes(fluor, substrates[1:])
+			slopes_stdcurve_atp = calc_slopes(atp_xy, [substrates[0]])
 
 			# Plots averaged standard curve data
-			plot2(slopes_stdcurve, 'Standard Curve Slopes Data', 'Standard_Curve_Slopes.png')
+			plot2(slopes_stdcurve, 'H2O2 Std Curve Slopes Data', 'H2O2 Std Curve Slopes.png')
+			plot2(slopes_stdcurve_atp, 'ATP Std Curve Slopes Data', 'ATP Std Curve Slopes.png')
 
 			correct_slopes_stdcurve = slopes_stdcurve.copy()
+			correct_slopes_stdcurve_atp = slopes_stdcurve_atp.copy()
 
-			correct_slopes_stdcurve = corrected(correct_slopes_stdcurve)
+			correct_slopes_stdcurve = corrected(correct_slopes_stdcurve, MITOCHONDRIA_H2O2)
+			correct_slopes_stdcurve_atp = corrected(correct_slopes_stdcurve_atp, MITOCHONDRIA_ATP)
 
 			# Plots averaged standard curve data
-			plot2(correct_slopes_stdcurve, 'Corrected Standard Curve Slopes Data', 'Correct_Standard_Curve_Slopes.png')
+			plot2(correct_slopes_stdcurve, 'H2O2 Corrected Std Curve Slopes Data', 'H2O2 Corrected Std Curve Slopes.png')
+			plot2(correct_slopes_stdcurve_atp, 'ATP Corrected Std Curve Slopes Data', 'ATP Corrected Std Curve Slopes.png')
 
 		# ----EXPORT---
 
 		# Set column labels
 		fluor.columns = column_labels
+		atp_xy.columns = column_labels_atp
 
 		if(bool_stdcurve):
-			fluor.to_excel(writer,('Standard Curve'))
-			slopes_stdcurve.to_excel(writer,('Standard Curve Slopes'))
-			correct_slopes_stdcurve.to_excel(writer,('Corrected Standard Curve Slopes'))
+			fluor.to_excel(writer,('H2O2 Std Curve'))
+			slopes_stdcurve.to_excel(writer,('H2O2 Std Curve Slopes'))
+			correct_slopes_stdcurve.to_excel(writer,('H2O2 Corrected Std Curve Slopes'))
+
+			atp_xy.to_excel(writer, ('ATP Std Curve'))
+			slopes_stdcurve_atp.to_excel(writer,('ATP Std Curve Slopes'))
+			correct_slopes_stdcurve_atp.to_excel(writer,('ATP Corrected Std Curve Slopes'))
 
 		# Saves excel file and moves on to next file to be analyzed if there is one
 		writer.save()
