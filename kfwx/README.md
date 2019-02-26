@@ -16,7 +16,7 @@
     * Run the command `pip --version`. 
     * If the response is `pip XX.X from ... (python 2.7)` then you have the correct version of pip installed. Otherwise, you should follow the installation instructions at https://ehmatthes.github.io/pcc/chapter_12/installing_pip.html#pip-on-os-x.
 3. Install kfwx from the Python Package Index with pip.
-    * Type the command `pip install kfwx`.
+    * Type the command `pip install --upgrade kfwx`.
 4. You must have also some other Python modules installed.
     * matplotlib
     * pandas

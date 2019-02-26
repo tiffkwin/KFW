@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="kfwx",
-    version="0.0.12",
+    version="0.0.15",
     author="Tiffany Nguyen",
     description="A data analysis toolkit for the KFW lab (MacOS X)",
     long_description=long_description,
